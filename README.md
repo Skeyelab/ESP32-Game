@@ -1,22 +1,23 @@
 # ESP32-Game
 
-A minimal, deterministic 1D LED game framework for ESP32, designed to support multiple simple arcade-style games (Pong, Flappy-style, Pacman-style, etc.) rendered on a single-dimensional WS2812B LED strip.
+A minimal, deterministic 1D LED game framework for ESP32, featuring **runtime game selection** via web interface. All 11 games are compiled into a single firmware image, and you can switch between them without recompiling!
 
-## Overview
+## Features
 
-This project provides a hardware-focused framework for building games on a one-dimensional LED array. The codebase prioritizes:
-
-- Reliable LED timing on ESP32
-- Clear separation between game logic and rendering
-- Easy extension with new games and input methods
-- Deterministic, frame-rate-independent behavior
+- 🎮 **11 Complete Games** - All games available in a single firmware
+- 🌐 **Web Interface** - Select games, monitor status, and view LED strip simulation
+- 🔄 **Runtime Game Selection** - Switch games without recompiling
+- 💾 **EEPROM Persistence** - Selected game persists across power cycles
+- 📡 **AP Mode by Default** - Self-hosted WiFi access point (no router needed)
+- 🎯 **Touch Controls** - Built-in ESP32 capacitive touch pins (no extra hardware)
+- 🧪 **Unit Tests** - Comprehensive test suite (13 test suites, 100+ tests)
 
 ## Hardware Requirements
 
 - **MCU**: ESP32 development board (esp32dev target)
 - **LED Strip**: WS2812B (NeoPixel-style, GRB color order)
 - **LED Data Pin**: GPIO 16 (locked unless explicitly changed)
-- **LED Count**: Configurable via `NUM_LEDS` define
+- **LED Count**: Configurable via `NUM_LEDS` define (default: 8)
 - **Input**: ESP32 capacitive touch pins (no additional hardware needed!)
 - **Power**: Ensure adequate power supply for your LED strip (WS2812B LEDs can draw significant current at full brightness)
 
@@ -45,247 +46,230 @@ You can touch these pins directly with your finger, or connect wires/foil pads t
 
 1. Clone this repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/Skeyelab/ESP32-Game.git
 cd ESP32-Game
 ```
 
-2. Open the project in PlatformIO (or use PlatformIO CLI)
-
-3. Build and upload:
+2. Build and upload:
 ```bash
-pio run -t upload
+pio run -e esp32dev -t upload
 ```
 
-4. Monitor serial output (optional):
-```bash
-pio device monitor
-```
+3. Connect to WiFi:
+   - Look for WiFi network: `ESP32-Game`
+   - Connect (no password required)
+   - Open browser to: `http://192.168.4.1`
 
-### Expected Behavior
+4. Select a game:
+   - Use the web interface to choose from 11 available games
+   - Game selection is saved and persists across power cycles
 
-The game "RGB Defender" will start automatically. You should see:
-- Serial output: "RGB Defender (8 LEDs) on GPIO 16"
-- A defender position (dim white LED) at position 3
-- Colored enemies (red, green, or blue) spawning from either end and moving toward the defender
-- Auto-firing bullets matching the current weapon color
-- Score displayed as blue brightness on the last LED
-- Game over flash (red) when an enemy reaches the defender
+## Games
 
-## Configuration
+All 11 games are compiled into the firmware and accessible via the web interface:
 
-Key configuration options are defined in `src/main.cpp`:
-
-- `NUM_LEDS`: Number of LEDs in your strip (default: 8)
-- `BRIGHTNESS`: LED brightness level, 0-255 (default: 64)
-- `LED_PIN`: Data pin for LED strip (default: 16, locked)
-- `LED_TYPE`: LED chip type (default: WS2812B)
-- `COLOR_ORDER`: Color order (default: GRB)
-
-Adjust these values to match your hardware setup before building.
-
-### Game-Specific Configuration
-
-Additional game tuning constants in `src/main.cpp`:
-
-- `DEF_POS`: Defender position (default: 3)
-- `TICK_MS`: Fixed timestep interval (default: 30ms)
-- `SPAWN_EVERY_MS`: Enemy spawn interval (default: 900ms)
-- `ENEMY_STEP_EVERY_MS`: Enemy movement speed (default: 260ms)
-- `BULLET_STEP_EVERY_MS`: Bullet movement speed (default: 130ms)
-- `FIRE_EVERY_MS`: Auto-fire interval (default: 260ms)
-- `WEAPON_CYCLE_MS`: Weapon color cycle time (default: 600ms)
-
-## Gameplay
-
-**RGB Defender** is a color-matching defense game:
-
-- **Defender**: Fixed position (LED 3) with dim white light tinted by current weapon color
-- **Enemies**: Spawn from either end with random colors (red, green, or blue), moving toward the defender
-- **Bullets**: Auto-fire toward the nearest enemy using the current weapon color
-- **Scoring**: Match bullet color to enemy color to destroy the enemy and score points
-- **Weapon**: Cycles through red → green → blue automatically
-- **Game Over**: If an enemy reaches the defender position, the game resets with a red flash
-
-The score is displayed as blue brightness on the last LED (LED 7).
-
-## Current Status
-
-The project currently includes **10 complete games**, each as a separate firmware:
-
-1. **1D Pacman** - Control a yellow dot to eat pellets while avoiding faster red ghosts. Power pellets let you temporarily turn the tables.
-2. **Lava Run** - Control a white dot to cross unstable lava zones. The lava erupts intermittently, so you must move quickly when it's safe.
-3. **Lava Stealth** - Avoid deadly lava and reach the green goal. You have a "stealth mode" that lets you temporarily pass through danger.
-4. **FlappyBird** - Control a bird to navigate through gaps in obstacles. Press to "flap" and move up, gravity pulls down.
-5. **1D Pong** - Classic Pong game on a 1D LED strip. Control paddle to bounce ball, opponent AI.
-6. **RGB Guardian** - Color-matching defense game. Enemies spawn with random colors, match bullet color to enemy color to score.
-7. **RGB Guardian 2** - Enhanced version with multiple enemies and improved mechanics.
-8. **Pulse Warrior** - Rhythm-based game where you must time actions with pulses. Press at the right moment to score points.
-9. **Color Runner X** - Run through colored zones, matching your color to pass through. Change your color to match obstacles.
-10. **1D Splatoon** - Paint the LED strip with your color. Cover more area than the opponent to win.
+1. **Test** - Simple test game to verify touch controls (move LED, change color, flash strip)
+2. **1D Pacman** - Control a yellow dot to eat pellets while avoiding faster red ghosts. Power pellets let you temporarily turn the tables.
+3. **Lava Run** - Control a white dot to cross unstable lava zones. The lava erupts intermittently, so you must move quickly when it's safe.
+4. **Lava Stealth** - Avoid deadly lava and reach the green goal. You have a "stealth mode" that lets you temporarily pass through danger.
+5. **FlappyBird** - Control a bird to navigate through gaps in obstacles. Press to "flap" and move up, gravity pulls down.
+6. **1D Pong** - Classic Pong game on a 1D LED strip. Control paddle to bounce ball, opponent AI.
+7. **RGB Guardian** - Color-matching defense game. Enemies spawn with random colors, match bullet color to enemy color to score.
+8. **RGB Guardian 2** - Enhanced version with multiple enemies and improved mechanics.
+9. **Pulse Warrior** - Rhythm-based game where you must time actions with pulses. Press at the right moment to score points.
+10. **Color Runner X** - Run through colored zones, matching your color to pass through. Change your color to match obstacles.
+11. **1D Splatoon** - Paint the LED strip with your color. Cover more area than the opponent to win.
 
 All games use fixed timestep game loops for deterministic behavior.
 
-## Project Goals & Architecture
+## Web Interface
 
-This framework is designed to support multiple games following a simple interface:
+The ESP32 runs a web server in AP (Access Point) mode by default, creating its own WiFi network.
+
+### Accessing the Dashboard
+
+1. **Connect to WiFi**: Look for network `ESP32-Game` (no password)
+2. **Open Browser**: Navigate to `http://192.168.4.1`
+3. **Select Game**: Use the game selection interface to switch between games
+4. **Monitor Status**: View real-time game status, score, and LED strip simulation
+
+### Features
+
+- **Game Selection**: Switch between all 11 games instantly via buttons or dropdown
+- **Real-time Status**: Game name, score, and state (playing/game over/won/paused)
+- **LED Strip Simulation**: Visual representation of the physical LED strip (updates every 500ms)
+- **Input Status**: Monitor which touch buttons are currently pressed
+- **Auto-refresh**: Dashboard updates automatically
+
+### API Endpoints
+
+- `GET /` - HTML dashboard
+- `GET /status` - JSON status with game info, score, state, input, and LED colors
+- `GET /games` - List of all available games with IDs
+- `GET /game/current` - Current game ID and name
+- `POST /game/select` - Switch game (send `{"gameId": 0}` JSON body)
+
+## Configuration
+
+### LED Configuration
+
+Key settings in `src/main.cpp`:
 
 ```cpp
-struct Game {
-  virtual const char* name();
-  virtual void reset();
-  virtual void update(uint32_t dtMs);
-  virtual void render();
-};
+#define LED_PIN     16        // Data pin (locked)
+#define NUM_LEDS    8         // Number of LEDs in your strip
+#define BRIGHTNESS  10        // Brightness level (0-255)
+#define LED_TYPE    WS2812B   // LED chip type
+#define COLOR_ORDER GRB       // Color order
 ```
 
-### Implemented Features
+### Network Configuration
 
-- ✅ Touch input abstraction (ESP32 capacitive touch pins)
-- ✅ Multiple selectable games (10 games)
-- ✅ Unit testing framework
+The ESP32 defaults to AP mode. To use WiFi connection instead:
 
-### Planned Features
-
-- Simple menu rendered on LEDs
-- Sound output (PWM or I2S)
-- ESP32-S3 compatibility
-
-See [AGENTS.md](AGENTS.md) for detailed development guidelines and architecture decisions.
-
-## Testing
-
-This project includes unit tests using PlatformIO's Unity testing framework. Tests focus on game logic without hardware dependencies.
-
-### Running Tests
-
-Run all tests:
-```bash
-pio test -e native
+1. Edit `src/config/wifi_config.h`:
+```cpp
+#define WIFI_SSID "YourWiFiName"
+#define WIFI_PASSWORD "YourWiFiPassword"
 ```
 
-Run a specific test:
-```bash
-pio test -e native -f test_game_logic
-```
+2. Modify `src/main.cpp` to connect to WiFi before starting AP mode (see code comments)
 
-### Test Structure
+### MQTT Configuration (Optional)
 
-- `test/test_game_logic/` - Core game mechanics (collisions, boundaries, timers, movement)
-- `test/test_touch_input/` - Touch input system (button states, edge detection, debouncing)
-- `test/test_pacman/` - Pacman-specific logic (pellets, ghosts, power mode)
-- `test/test_lava_run/` - Lava Run game logic (lava zones, movement, win conditions)
-- `test/test_lava_stealth/` - Lava Stealth game logic (stealth mode, cooldown, passing through danger)
-- `test/test_flappy/` - FlappyBird game logic (obstacles, gravity, collisions)
-- `test/test_pong/` - Pong game logic (ball bouncing, scoring, AI movement)
-- `test/test_rgb_guardian/` - RGB Guardian game logic (color matching, enemy/bullet collisions, weapon cycling)
-- `test/test_rgb_guardian2/` - RGB Guardian 2 game logic (multiple enemies/bullets, nearest enemy targeting)
-- `test/test_pulse_warrior/` - Pulse Warrior game logic (pulse timing, target hitting, combo system)
-- `test/test_color_runner/` - Color Runner X game logic (color matching zones, passing through correct colors)
-- `test/test_splatoon/` - Splatoon game logic (painting, scoring, win conditions)
+MQTT is disabled in AP mode (no internet connection). To enable:
 
-**Total: 112 tests covering all 10 games and input system**
+1. Configure in `src/config/mqtt_config.h`
+2. Modify `src/main.cpp` to enable MQTT client
 
-Tests are run on the native platform (no hardware required) and validate game logic, collision detection, score calculations, and state transitions.
+## Architecture
 
-## Project Structure
+### Game Manager System
+
+All games are managed through a centralized `game_manager` system:
+
+- **Game Registry**: All 11 games registered with unique IDs (0-10)
+- **Runtime Selection**: Switch games via web interface or API
+- **EEPROM Persistence**: Selected game saved to EEPROM (survives power cycles)
+- **Function Pointers**: Each game exposes `game_XX_setup()` and `game_XX_loop()` functions
+
+### Project Structure
 
 ```
 ESP32-Game/
 ├── src/
-│   ├── main.cpp          # Main entry point with game selection
-│   ├── input/            # Input abstraction layer
+│   ├── main.cpp              # Main entry point
+│   ├── input/                # Input abstraction
 │   │   ├── touch_input.h
 │   │   └── touch_input.cpp
-│   └── games/            # Individual game implementations
-│       ├── game_01_pacman.cpp
-│       ├── game_02_lava_run.cpp
-│       ├── game_03_lava_stealth.cpp
-│       ├── game_04_flappy.cpp
-│       ├── game_05_pong.cpp
-│       ├── game_06_rgb_guardian.cpp
-│       ├── game_07_rgb_guardian2.cpp
-│       ├── game_08_pulse_warrior.cpp
-│       ├── game_09_color_runner.cpp
-│       └── game_10_splatoon.cpp
-├── test/                 # Unit tests
-│   ├── test_game_logic/
+│   ├── games/                # Game implementations
+│   │   ├── game_manager.h    # Game manager system
+│   │   ├── game_manager.cpp
+│   │   ├── game_00_test.cpp
+│   │   ├── game_01_pacman.cpp
+│   │   └── ... (all 11 games)
+│   ├── status/               # Status monitoring
+│   │   ├── status_monitor.h
+│   │   └── status_monitor.cpp
+│   ├── network/              # Network components
+│   │   ├── wifi_manager.h/cpp
+│   │   ├── web_server.h/cpp
+│   │   └── mqtt_client.h/cpp
+│   └── config/               # Configuration files
+│       ├── wifi_config.h
+│       └── mqtt_config.h
+├── test/                     # Unit tests
+│   ├── test_game_manager/
+│   ├── test_touch_input/
 │   ├── test_pacman/
-│   ├── test_lava_run/
-│   ├── test_flappy/
-│   ├── test_pong/
-│   └── test_splatoon/
-├── platformio.ini        # PlatformIO build configuration
-├── AGENTS.md             # Development guidelines and architecture docs
-└── README.md             # This file
+│   └── ... (all game tests)
+├── platformio.ini            # Build configuration
+├── .github/workflows/        # CI/CD
+│   └── ci.yml
+├── AGENTS.md                 # Development guidelines
+└── README.md                 # This file
 ```
 
-## Networking & Status Monitoring
+## Testing
 
-The ESP32 can optionally expose game status via WiFi (webserver and MQTT). This feature is disabled by default.
+This project includes comprehensive unit tests using PlatformIO's Unity testing framework.
 
-### Enabling Networking
+### Running Tests
 
-1. Uncomment `#define ENABLE_NETWORKING` in `src/main.cpp`
-2. Configure WiFi credentials in `src/config/wifi_config.h`:
-   ```cpp
-   #define WIFI_SSID "YourWiFiName"
-   #define WIFI_PASSWORD "YourWiFiPassword"
-   ```
-3. Configure MQTT broker in `src/config/mqtt_config.h`:
-   ```cpp
-   #define MQTT_BROKER "192.168.1.100"  // Your MQTT broker IP
-   #define MQTT_PORT 1883
-   ```
+```bash
+# Run all tests
+pio test -e native
 
-### Web Server
+# Run specific test suite
+pio test -e native -f test_pacman
+```
 
-Once connected to WiFi, access the web dashboard at `http://<ESP32_IP>/`:
-- View current game name, score, and state
-- Monitor input button states
-- Auto-refresh option for real-time updates
+### Test Coverage
 
-**API Endpoints:**
-- `GET /` - HTML dashboard
-- `GET /status` - JSON status (`{"gameName": "...", "score": 0, "state": 0, ...}`)
-- `GET /games` - List of available games
+- **13 Test Suites** covering all games and systems:
+  - `test_game_manager` - Game manager and runtime selection
+  - `test_touch_input` - Touch input system (button states, debouncing)
+  - `test_game_logic` - Core game mechanics
+  - Individual game tests for all 11 games
 
-### MQTT Topics
+- **100+ Tests** covering:
+  - Game logic and mechanics
+  - Collision detection
+  - Score calculations
+  - State transitions
+  - Input handling
+  - Boundary checks
 
-Status is published to MQTT topics (if broker is configured):
-- `esp32-game/status` - Full status JSON
-- `esp32-game/score` - Score updates (number)
-- `esp32-game/game-state` - State changes (0=playing, 1=game_over, 2=won, 3=paused)
-- `esp32-game/input` - Input state changes (JSON with button states)
+### CI/CD
 
-**Note:** Updates are only sent when status changes (score, state, input) for efficiency.
+GitHub Actions automatically:
+- Runs all unit tests on every push/PR
+- Builds ESP32 firmware
+- Uploads firmware as artifact
 
-### Fallback Mode
+## Development
 
-If WiFi connection fails, the ESP32 will start in AP (Access Point) mode:
-- SSID: `ESP32-Game`
-- Connect to this network and access the web dashboard at `http://192.168.4.1/`
+### Adding a New Game
+
+1. Create `src/games/game_XX_name.cpp` following the existing pattern
+2. Implement:
+   - `static void game_setup()` - Initialize game
+   - `static void game_loop(uint32_t dt)` - Game update loop
+   - `void game_XX_setup()` - Wrapper function (calls game_setup)
+   - `void game_XX_loop(uint32_t dt)` - Wrapper function (calls game_loop)
+3. Register in `src/games/game_manager.cpp`:
+   - Add to `GAMES[]` array with ID, name, and function pointers
+4. Add tests in `test/test_XX_name/`
+
+### Coding Guidelines
+
+See [AGENTS.md](AGENTS.md) for detailed development guidelines:
+
+- Use struct over class (unless inheritance needed)
+- Avoid dynamic memory allocation
+- Prefer compile-time configuration
+- Keep deterministic, frame-rate-independent behavior
+- Preserve GPIO 16 for LED output
+- Use FastLED library for LED control
 
 ## Contributing
 
-This project follows specific coding conventions and architectural principles. Before contributing:
-
-1. Read [AGENTS.md](AGENTS.md) for detailed guidelines
-2. Follow the established patterns (struct over class, no dynamic allocation, etc.)
-3. Keep changes minimal and testable
-4. Preserve deterministic behavior and GPIO 16 for LED output
-5. Add tests for new game logic when appropriate
-6. Run tests before submitting: `pio test -e native`
+1. Read [AGENTS.md](AGENTS.md) for guidelines
+2. Follow established patterns
+3. Add tests for new features
+4. Run tests before submitting: `pio test -e native`
+5. Ensure builds succeed: `pio run -e esp32dev`
 
 ## Philosophy
 
 This project values:
-- Physical feedback over UI complexity
-- Simple visuals with tight timing
-- Hackability over polish
+- **Physical feedback** over UI complexity
+- **Simple visuals** with tight timing
+- **Hackability** over polish
+- **Deterministic behavior** for reliable gameplay
 
-If a change makes the system harder to reason about on real hardware, it is probably the wrong change.
+If a change makes the system harder to reason about on real hardware, it's probably the wrong change.
 
 ## License
 
 [Add your license here]
-
