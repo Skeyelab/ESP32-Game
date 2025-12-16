@@ -219,6 +219,52 @@ ESP32-Game/
 └── README.md             # This file
 ```
 
+## Networking & Status Monitoring
+
+The ESP32 can optionally expose game status via WiFi (webserver and MQTT). This feature is disabled by default.
+
+### Enabling Networking
+
+1. Uncomment `#define ENABLE_NETWORKING` in `src/main.cpp`
+2. Configure WiFi credentials in `src/config/wifi_config.h`:
+   ```cpp
+   #define WIFI_SSID "YourWiFiName"
+   #define WIFI_PASSWORD "YourWiFiPassword"
+   ```
+3. Configure MQTT broker in `src/config/mqtt_config.h`:
+   ```cpp
+   #define MQTT_BROKER "192.168.1.100"  // Your MQTT broker IP
+   #define MQTT_PORT 1883
+   ```
+
+### Web Server
+
+Once connected to WiFi, access the web dashboard at `http://<ESP32_IP>/`:
+- View current game name, score, and state
+- Monitor input button states
+- Auto-refresh option for real-time updates
+
+**API Endpoints:**
+- `GET /` - HTML dashboard
+- `GET /status` - JSON status (`{"gameName": "...", "score": 0, "state": 0, ...}`)
+- `GET /games` - List of available games
+
+### MQTT Topics
+
+Status is published to MQTT topics (if broker is configured):
+- `esp32-game/status` - Full status JSON
+- `esp32-game/score` - Score updates (number)
+- `esp32-game/game-state` - State changes (0=playing, 1=game_over, 2=won, 3=paused)
+- `esp32-game/input` - Input state changes (JSON with button states)
+
+**Note:** Updates are only sent when status changes (score, state, input) for efficiency.
+
+### Fallback Mode
+
+If WiFi connection fails, the ESP32 will start in AP (Access Point) mode:
+- SSID: `ESP32-Game`
+- Connect to this network and access the web dashboard at `http://192.168.4.1/`
+
 ## Contributing
 
 This project follows specific coding conventions and architectural principles. Before contributing:

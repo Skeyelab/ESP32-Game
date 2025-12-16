@@ -5,6 +5,9 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include "../input/touch_input.h"
+#ifdef ENABLE_NETWORKING
+#include "../status/status_monitor.h"
+#endif
 
 extern CRGB leds[];
 #define NUM_LEDS 8  // Must match main.cpp
@@ -124,16 +127,28 @@ static void updatePlayer() {
 static void checkGameState() {
   if (playerPos == targetPos && !gameWon) {
     gameWon = true;
+#ifdef ENABLE_NETWORKING
+    status_monitor_update_state(GAME_STATE_WON);
+#endif
     flashWin();
     delay(1000);
     resetGame();
+#ifdef ENABLE_NETWORKING
+    status_monitor_update_state(GAME_STATE_PLAYING);
+#endif
   }
 
   if (lavaActive[playerPos] && !stealthMode && !gameOver) {
     gameOver = true;
+#ifdef ENABLE_NETWORKING
+    status_monitor_update_state(GAME_STATE_GAME_OVER);
+#endif
     flashGameOver();
     delay(1000);
     resetGame();
+#ifdef ENABLE_NETWORKING
+    status_monitor_update_state(GAME_STATE_PLAYING);
+#endif
   }
 }
 
@@ -169,14 +184,18 @@ static void render() {
   }
 }
 
-void game_setup() {
+static void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("Lava Stealth (8 LEDs) on GPIO 16");
   Serial.println("Action touch: move forward, Alt touch: activate stealth");
+#ifdef ENABLE_NETWORKING
+  status_monitor_update_game_name("Lava Stealth");
+  status_monitor_update_state(GAME_STATE_PLAYING);
+#endif
 }
 
-void game_loop(uint32_t dt) {
+static void game_loop(uint32_t dt) {
   if (gameWon || gameOver) return;
 
   static uint32_t accum = 0;
@@ -204,3 +223,16 @@ void game_loop(uint32_t dt) {
 }
 
 
+
+
+
+
+
+// Wrapper functions for game manager
+void game_03_setup() {
+  game_setup();
+}
+
+void game_03_loop(uint32_t dt) {
+  game_loop(dt);
+}

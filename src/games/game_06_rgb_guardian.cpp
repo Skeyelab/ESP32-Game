@@ -4,6 +4,9 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include "../input/touch_input.h"
+#ifdef ENABLE_NETWORKING
+#include "../status/status_monitor.h"
+#endif
 
 extern CRGB leds[];
 #define NUM_LEDS 8  // Must match main.cpp
@@ -112,6 +115,9 @@ static void collisions() {
   if (enemy.color == bullet.color) {
     enemy.active = false;
     score++;
+#ifdef ENABLE_NETWORKING
+    status_monitor_update_score(score);
+#endif
   }
   bullet.active = false;
 }
@@ -126,15 +132,20 @@ static void render() {
   leds[NUM_LEDS - 1] += CRGB(0, 0, level);
 }
 
-void game_setup() {
+static void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("RGB Guardian (8 LEDs) on GPIO 16");
   Serial.println("Left touch: weapon color -, Right touch: weapon color +");
   Serial.println("Action touch: fire bullet");
+#ifdef ENABLE_NETWORKING
+  status_monitor_update_game_name("RGB Guardian");
+  status_monitor_update_state(GAME_STATE_PLAYING);
+  status_monitor_update_score(0);
+#endif
 }
 
-void game_loop(uint32_t dt) {
+static void game_loop(uint32_t dt) {
   static uint32_t accum = 0;
   accum += dt;
 
@@ -180,3 +191,16 @@ void game_loop(uint32_t dt) {
 }
 
 
+
+
+
+
+
+// Wrapper functions for game manager
+void game_06_setup() {
+  game_setup();
+}
+
+void game_06_loop(uint32_t dt) {
+  game_loop(dt);
+}

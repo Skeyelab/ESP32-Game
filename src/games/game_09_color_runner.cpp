@@ -5,6 +5,9 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include "../input/touch_input.h"
+#ifdef ENABLE_NETWORKING
+#include "../status/status_monitor.h"
+#endif
 
 extern CRGB leds[];
 #define NUM_LEDS 8  // Must match main.cpp
@@ -94,6 +97,9 @@ static void updateZones() {
     if (zones[i].pos < 0) {
       zones[i].active = false;
       score++;
+#ifdef ENABLE_NETWORKING
+      status_monitor_update_score(score);
+#endif
     }
   }
 }
@@ -120,14 +126,24 @@ static void checkCollisions() {
     if (zones[i].color != playerColor) {
       // Wrong color - game over
       gameOver = true;
+#ifdef ENABLE_NETWORKING
+      status_monitor_update_state(GAME_STATE_GAME_OVER);
+#endif
       flashGameOver();
       delay(1000);
       resetGame();
+#ifdef ENABLE_NETWORKING
+      status_monitor_update_state(GAME_STATE_PLAYING);
+      status_monitor_update_score(0);
+#endif
       return;
     } else {
       // Correct color - pass through
       zones[i].active = false;
       score += 5;
+#ifdef ENABLE_NETWORKING
+      status_monitor_update_score(score);
+#endif
     }
   }
 
@@ -157,14 +173,19 @@ static void render() {
   leds[NUM_LEDS - 1] += CRGB(0, brightness, brightness);
 }
 
-void game_setup() {
+static void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("Color Runner X (8 LEDs) on GPIO 16");
   Serial.println("Action touch: move forward, Alt touch: change color");
+#ifdef ENABLE_NETWORKING
+  status_monitor_update_game_name("Color Runner X");
+  status_monitor_update_state(GAME_STATE_PLAYING);
+  status_monitor_update_score(0);
+#endif
 }
 
-void game_loop(uint32_t dt) {
+static void game_loop(uint32_t dt) {
   if (gameOver) return;
 
   static uint32_t accum = 0;
@@ -196,3 +217,16 @@ void game_loop(uint32_t dt) {
 }
 
 
+
+
+
+
+
+// Wrapper functions for game manager
+void game_09_setup() {
+  game_setup();
+}
+
+void game_09_loop(uint32_t dt) {
+  game_loop(dt);
+}

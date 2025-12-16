@@ -5,6 +5,9 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include "../input/touch_input.h"
+#ifdef ENABLE_NETWORKING
+#include "../status/status_monitor.h"
+#endif
 
 extern CRGB leds[];
 #define NUM_LEDS 8  // Must match main.cpp
@@ -71,6 +74,9 @@ static void checkHit() {
     score += 10 + combo;
     combo++;
     pulseActive = false;
+#ifdef ENABLE_NETWORKING
+    status_monitor_update_score(score);
+#endif
 
     // Flash success
     fill_solid(leds, NUM_LEDS, CRGB::Green);
@@ -105,14 +111,19 @@ static void render() {
   leds[NUM_LEDS - 1] += CRGB(0, comboBright, comboBright);
 }
 
-void game_setup() {
+static void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("Pulse Warrior (8 LEDs) on GPIO 16");
   Serial.println("Action touch: hit when pulse reaches target");
+#ifdef ENABLE_NETWORKING
+  status_monitor_update_game_name("Pulse Warrior");
+  status_monitor_update_state(GAME_STATE_PLAYING);
+  status_monitor_update_score(0);
+#endif
 }
 
-void game_loop(uint32_t dt) {
+static void game_loop(uint32_t dt) {
   static uint32_t accum = 0;
   accum += dt;
 
@@ -135,3 +146,16 @@ void game_loop(uint32_t dt) {
 }
 
 
+
+
+
+
+
+// Wrapper functions for game manager
+void game_08_setup() {
+  game_setup();
+}
+
+void game_08_loop(uint32_t dt) {
+  game_loop(dt);
+}
