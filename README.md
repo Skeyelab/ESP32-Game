@@ -171,6 +171,7 @@ pio test -e native -f test_game_logic
 ### Test Structure
 
 - `test/test_game_logic/` - Core game mechanics (collisions, boundaries, timers, movement)
+- `test/test_touch_input/` - Touch input system (button states, edge detection, debouncing)
 - `test/test_pacman/` - Pacman-specific logic (pellets, ghosts, power mode)
 - `test/test_lava_run/` - Lava Run game logic (lava zones, movement, win conditions)
 - `test/test_lava_stealth/` - Lava Stealth game logic (stealth mode, cooldown, passing through danger)
@@ -182,7 +183,7 @@ pio test -e native -f test_game_logic
 - `test/test_color_runner/` - Color Runner X game logic (color matching zones, passing through correct colors)
 - `test/test_splatoon/` - Splatoon game logic (painting, scoring, win conditions)
 
-**Total: 96 tests covering all 10 games**
+**Total: 112 tests covering all 10 games and input system**
 
 Tests are run on the native platform (no hardware required) and validate game logic, collision detection, score calculations, and state transitions.
 
