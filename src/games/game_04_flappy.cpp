@@ -5,6 +5,9 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include "../input/touch_input.h"
+#ifdef ENABLE_NETWORKING
+#include "../status/status_monitor.h"
+#endif
 
 extern CRGB leds[];
 #define NUM_LEDS 8  // Must match main.cpp
@@ -95,6 +98,9 @@ static void updateObstacles() {
     if (obstacles[i].pos < 0) {
       obstacles[i].active = false;
       score++;
+#ifdef ENABLE_NETWORKING
+      status_monitor_update_score(score);
+#endif
     }
   }
 }
@@ -105,8 +111,15 @@ static void checkCollisions() {
   // Check boundary collisions
   if (birdPos <= 0 || birdPos >= NUM_LEDS - 1) {
     gameOver = true;
+#ifdef ENABLE_NETWORKING
+    status_monitor_update_state(GAME_STATE_GAME_OVER);
+#endif
     flashGameOver();
     resetGame();
+#ifdef ENABLE_NETWORKING
+    status_monitor_update_state(GAME_STATE_PLAYING);
+    status_monitor_update_score(0);
+#endif
     return;
   }
 
@@ -118,8 +131,15 @@ static void checkCollisions() {
     int gapBottom = obstacles[i].gapTop + GAP_SIZE;
     if (birdPos < obstacles[i].gapTop || birdPos >= gapBottom) {
       gameOver = true;
+#ifdef ENABLE_NETWORKING
+      status_monitor_update_state(GAME_STATE_GAME_OVER);
+#endif
       flashGameOver();
       resetGame();
+#ifdef ENABLE_NETWORKING
+      status_monitor_update_state(GAME_STATE_PLAYING);
+      status_monitor_update_score(0);
+#endif
       return;
     }
   }
@@ -150,14 +170,19 @@ static void render() {
   leds[NUM_LEDS - 1] += CRGB(0, brightness, 0);
 }
 
-void game_setup() {
+static void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("FlappyBird (8 LEDs) on GPIO 16");
   Serial.println("Action touch: flap/jump");
+#ifdef ENABLE_NETWORKING
+  status_monitor_update_game_name("FlappyBird");
+  status_monitor_update_state(GAME_STATE_PLAYING);
+  status_monitor_update_score(0);
+#endif
 }
 
-void game_loop(uint32_t dt) {
+static void game_loop(uint32_t dt) {
   if (gameOver) return;
 
   static uint32_t accum = 0;
@@ -193,3 +218,16 @@ void game_loop(uint32_t dt) {
 }
 
 
+
+
+
+
+
+// Wrapper functions for game manager
+void game_04_setup() {
+  game_setup();
+}
+
+void game_04_loop(uint32_t dt) {
+  game_loop(dt);
+}

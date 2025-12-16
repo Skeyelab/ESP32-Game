@@ -7,6 +7,9 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include "../input/touch_input.h"
+#ifdef ENABLE_NETWORKING
+#include "../status/status_monitor.h"
+#endif
 
 extern CRGB leds[];
 #define NUM_LEDS 8  // Must match main.cpp
@@ -79,7 +82,7 @@ static void render() {
   }
 }
 
-void game_setup() {
+static void game_setup() {
   resetGame();
   Serial.println("=== TOUCH CONTROL TEST ===");
   Serial.println("Left touch (GPIO 4): Move LED left");
@@ -87,9 +90,14 @@ void game_setup() {
   Serial.println("Action touch (GPIO 13): Change color");
   Serial.println("Alt touch (GPIO 12): Flash all LEDs");
   Serial.println("Current color: Red");
+#ifdef ENABLE_NETWORKING
+  status_monitor_update_game_name("Test");
+  status_monitor_update_state(GAME_STATE_PLAYING);
+  status_monitor_update_score(0);
+#endif
 }
 
-void game_loop(uint32_t dt) {
+static void game_loop(uint32_t dt) {
   static uint32_t accum = 0;
   accum += dt;
 
@@ -104,5 +112,14 @@ void game_loop(uint32_t dt) {
   }
 
   FastLED.show();
+}
+
+// Wrapper functions for game manager
+void game_00_setup() {
+  game_setup();
+}
+
+void game_00_loop(uint32_t dt) {
+  game_loop(dt);
 }
 

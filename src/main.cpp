@@ -1,6 +1,21 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include "input/touch_input.h"
+#include "games/game_manager.h"
+
+// Enable networking (comment out to disable)
+#define ENABLE_NETWORKING
+
+#ifdef ENABLE_NETWORKING
+#include "status/status_monitor.h"
+#include "network/wifi_manager.h"
+#include "network/web_server.h"
+#include "network/mqtt_client.h"
+#include "config/wifi_config.h"
+#include "config/mqtt_config.h"
+#include <ArduinoJson.h>
+#include <FastLED.h>  // For CRGB access
+#endif
 
 #define LED_PIN     16
 #define NUM_LEDS    8
@@ -8,24 +23,7 @@
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 
-// Game selection: uncomment the game you want to compile
-#define GAME_00_TEST
-// #define GAME_01_PACMAN
-// #define GAME_02_LAVA_RUN
-// #define GAME_03_LAVA_STEALTH
-// #define GAME_04_FLAPPY
-// #define GAME_05_PONG
-// #define GAME_06_RGB_GUARDIAN
-// #define GAME_07_RGB_GUARDIAN2
-// #define GAME_08_PULSE_WARRIOR
-// #define GAME_09_COLOR_RUNNER
-// #define GAME_10_SPLATOON
-
 CRGB leds[NUM_LEDS];
-
-// Forward declarations
-void game_setup();
-void game_loop(uint32_t dt);
 
 void setup() {
   Serial.begin(115200);
@@ -35,7 +33,36 @@ void setup() {
   FastLED.setBrightness(BRIGHTNESS);
 
   touch_input_init();
-  game_setup();
+
+  // Initialize game manager (loads saved game from EEPROM)
+  game_manager_init();
+
+#ifdef ENABLE_NETWORKING
+  // Initialize status monitor
+  status_monitor_init();
+
+  // Initialize WiFi - start in AP mode (self-hosted server)
+  wifi_manager_init();
+  Serial.println("Starting AP mode (self-hosted server)...");
+  wifi_manager_start_ap(AP_SSID, AP_PASSWORD);
+  Serial.print("AP started! IP: ");
+  Serial.println(wifi_manager_get_ip());
+
+  // Initialize web server
+  web_server_init();
+
+  // MQTT is disabled when using AP mode (no internet connection)
+  // Uncomment below if you want to enable MQTT with a different network setup
+  // mqtt_client_init();
+  // if (mqtt_client_connect(MQTT_BROKER, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD, MQTT_CLIENT_ID)) {
+  //   Serial.println("MQTT connected!");
+  // } else {
+  //   Serial.println("MQTT connection failed (will retry)");
+  // }
+#endif
+
+  // Setup the current game (loaded from EEPROM or default)
+  game_manager_setup();
 }
 
 void loop() {
@@ -45,32 +72,67 @@ void loop() {
   last = now;
 
   touch_input_update();
-  game_loop(dt);
+
+#ifdef ENABLE_NETWORKING
+  // Update network services
+  wifi_manager_update();
+  web_server_update();
+  // MQTT disabled in AP mode (no internet connection)
+  // mqtt_client_update();
+
+  // Update status monitor with input state
+  InputState input = touch_input_get();
+  status_monitor_update_input(
+    input.left.pressed,
+    input.right.pressed,
+    input.action.pressed,
+    input.alt.pressed
+  );
+#endif
+
+  game_manager_loop(dt);
+
+#ifdef ENABLE_NETWORKING
+  // Update status monitor with LED state AFTER game_loop (so we capture the rendered state)
+  LEDColor ledColors[8];
+  for (int i = 0; i < NUM_LEDS; i++) {
+    ledColors[i].r = leds[i].r;
+    ledColors[i].g = leds[i].g;
+    ledColors[i].b = leds[i].b;
+  }
+  status_monitor_update_leds(ledColors, NUM_LEDS);
+
+  // Always send status updates (LEDs change every frame, not just on status changes)
+  GameStatus status = status_monitor_get();
+
+  // Publish full status as JSON (increased size for LED array)
+  StaticJsonDocument<768> doc;
+  doc["gameName"] = status.gameName;
+  doc["score"] = status.score;
+  doc["state"] = status.state;
+  doc["leftPressed"] = status.leftPressed;
+  doc["rightPressed"] = status.rightPressed;
+  doc["actionPressed"] = status.actionPressed;
+  doc["altPressed"] = status.altPressed;
+  doc["timestamp"] = status.timestamp;
+
+    // Add LED array - ensure all 8 LEDs are included
+    JsonArray ledsArray = doc.createNestedArray("leds");
+    for (int i = 0; i < 8; i++) {
+      JsonObject led = ledsArray.createNestedObject();
+      led["r"] = (int)status.leds[i].r;
+      led["g"] = (int)status.leds[i].g;
+      led["b"] = (int)status.leds[i].b;
+    }
+
+  // MQTT publishing disabled in AP mode (no internet connection)
+  // Status is available via web server at /status endpoint
+  if (status_monitor_has_changed()) {
+    // Status changes are automatically available via web server
+    status_monitor_clear_changed();
+  }
+#endif
 }
 
-// Include selected game
-#ifdef GAME_00_TEST
-  #include "games/game_00_test.cpp"
-#elif defined(GAME_01_PACMAN)
-  #include "games/game_01_pacman.cpp"
-#elif defined(GAME_02_LAVA_RUN)
-  #include "games/game_02_lava_run.cpp"
-#elif defined(GAME_03_LAVA_STEALTH)
-  #include "games/game_03_lava_stealth.cpp"
-#elif defined(GAME_04_FLAPPY)
-  #include "games/game_04_flappy.cpp"
-#elif defined(GAME_05_PONG)
-  #include "games/game_05_pong.cpp"
-#elif defined(GAME_06_RGB_GUARDIAN)
-  #include "games/game_06_rgb_guardian.cpp"
-#elif defined(GAME_07_RGB_GUARDIAN2)
-  #include "games/game_07_rgb_guardian2.cpp"
-#elif defined(GAME_08_PULSE_WARRIOR)
-  #include "games/game_08_pulse_warrior.cpp"
-#elif defined(GAME_09_COLOR_RUNNER)
-  #include "games/game_09_color_runner.cpp"
-#elif defined(GAME_10_SPLATOON)
-  #include "games/game_10_splatoon.cpp"
-#else
-  #error "No game selected! Uncomment one of the GAME_XX defines at the top of main.cpp"
-#endif
+// All games are compiled separately by PlatformIO
+// Game manager uses wrapper functions (game_XX_setup, game_XX_loop) to call them
