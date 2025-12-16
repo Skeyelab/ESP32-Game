@@ -4,9 +4,10 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "../input/touch_input.h"
 
 extern CRGB leds[];
-extern const int NUM_LEDS;
+#define NUM_LEDS 8  // Must match main.cpp
 
 static constexpr uint32_t TICK_MS = 100;
 static constexpr uint32_t LAVA_ERUPT_MS = 800;
@@ -86,9 +87,8 @@ static void updateLava() {
 }
 
 static void updatePlayer() {
-  // TODO: Move based on input
-  // For demo: auto-advance when safe
-  if (playerPos < targetPos && !lavaActive[playerPos + 1]) {
+  // Move based on input
+  if (touch_action_just_pressed() && playerPos < targetPos && !lavaActive[playerPos + 1]) {
     playerPos++;
   }
 }
@@ -100,7 +100,7 @@ static void checkGameState() {
     delay(1000);
     resetGame();
   }
-  
+
   if (lavaActive[playerPos] && !gameOver) {
     gameOver = true;
     flashGameOver();
@@ -111,7 +111,7 @@ static void checkGameState() {
 
 static void render() {
   fadeToBlackBy(leds, NUM_LEDS, 150);
-  
+
   // Render lava zones
   for (int i = 0; i < NUM_LEDS; i++) {
     if (lavaActive[i]) {
@@ -120,13 +120,13 @@ static void render() {
       leds[i] = CRGB(intensity, intensity / 4, 0);
     }
   }
-  
+
   // Render start (green)
   leds[0] = CRGB::Green;
-  
+
   // Render end (blue)
   leds[targetPos] = CRGB::Blue;
-  
+
   // Render player (white)
   leds[playerPos] = CRGB::White;
 }
@@ -135,32 +135,33 @@ void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("Lava Run (8 LEDs) on GPIO 16");
-  Serial.println("Note: Input controls not yet implemented");
+  Serial.println("Action touch: move forward (when safe)");
 }
 
 void game_loop(uint32_t dt) {
   if (gameWon || gameOver) return;
-  
+
   static uint32_t accum = 0;
   accum += dt;
-  
+
   while (accum >= TICK_MS) {
     accum -= TICK_MS;
-    
+
     tLavaCycle += TICK_MS;
     tPlayerMove += TICK_MS;
-    
+
     updateLava();
-    
+
     if (tPlayerMove >= PLAYER_MOVE_MS) {
       tPlayerMove = 0;
       updatePlayer();
     }
-    
+
     checkGameState();
     render();
   }
-  
+
   FastLED.show();
 }
+
 

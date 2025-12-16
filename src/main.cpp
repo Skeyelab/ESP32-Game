@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <FastLED.h>
+#include "input/touch_input.h"
 
 #define LED_PIN     16
 #define NUM_LEDS    8
@@ -8,12 +9,13 @@
 #define COLOR_ORDER GRB
 
 // Game selection: uncomment the game you want to compile
+#define GAME_00_TEST
 // #define GAME_01_PACMAN
 // #define GAME_02_LAVA_RUN
 // #define GAME_03_LAVA_STEALTH
 // #define GAME_04_FLAPPY
 // #define GAME_05_PONG
-#define GAME_06_RGB_GUARDIAN
+// #define GAME_06_RGB_GUARDIAN
 // #define GAME_07_RGB_GUARDIAN2
 // #define GAME_08_PULSE_WARRIOR
 // #define GAME_09_COLOR_RUNNER
@@ -32,6 +34,7 @@ void setup() {
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
 
+  touch_input_init();
   game_setup();
 }
 
@@ -41,11 +44,14 @@ void loop() {
   uint32_t dt = now - last;
   last = now;
 
+  touch_input_update();
   game_loop(dt);
 }
 
 // Include selected game
-#ifdef GAME_01_PACMAN
+#ifdef GAME_00_TEST
+  #include "games/game_00_test.cpp"
+#elif defined(GAME_01_PACMAN)
   #include "games/game_01_pacman.cpp"
 #elif defined(GAME_02_LAVA_RUN)
   #include "games/game_02_lava_run.cpp"

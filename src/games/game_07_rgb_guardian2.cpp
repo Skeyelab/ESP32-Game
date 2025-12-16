@@ -3,17 +3,16 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "../input/touch_input.h"
 
 extern CRGB leds[];
-extern const int NUM_LEDS;
+#define NUM_LEDS 8  // Must match main.cpp
 
 static constexpr int DEF_POS = 3;
 static constexpr uint32_t TICK_MS = 30;
 static constexpr uint32_t SPAWN_EVERY_MS = 700;
 static constexpr uint32_t ENEMY_STEP_EVERY_MS = 220;
 static constexpr uint32_t BULLET_STEP_EVERY_MS = 120;
-static constexpr uint32_t FIRE_EVERY_MS = 240;
-static constexpr uint32_t WEAPON_CYCLE_MS = 500;
 static constexpr int MAX_ENEMIES = 2;
 static constexpr int MAX_BULLETS = 2;
 
@@ -45,7 +44,7 @@ static Enemy enemies[MAX_ENEMIES];
 static Bullet bullets[MAX_BULLETS];
 static ColorId weaponColor = C_RED;
 static uint32_t score = 0;
-static uint32_t tSpawn = 0, tEnemyStep = 0, tBulletStep = 0, tFire = 0, tWeapon = 0;
+static uint32_t tSpawn = 0, tEnemyStep = 0, tBulletStep = 0;
 
 static ColorId randColor() { return (ColorId)(esp_random() % 3); }
 
@@ -54,7 +53,7 @@ static void resetGame() {
   for (int i = 0; i < MAX_BULLETS; i++) bullets[i] = Bullet{};
   weaponColor = C_RED;
   score = 0;
-  tSpawn = tEnemyStep = tBulletStep = tFire = tWeapon = 0;
+  tSpawn = tEnemyStep = tBulletStep = 0;
   FastLED.clear();
   FastLED.show();
 }
@@ -189,6 +188,8 @@ void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("RGB Guardian 2 (8 LEDs) on GPIO 16");
+  Serial.println("Left touch: weapon color -, Right touch: weapon color +");
+  Serial.println("Action touch: fire bullet");
 }
 
 void game_loop(uint32_t dt) {
@@ -201,12 +202,12 @@ void game_loop(uint32_t dt) {
     tSpawn += TICK_MS;
     tEnemyStep += TICK_MS;
     tBulletStep += TICK_MS;
-    tFire += TICK_MS;
-    tWeapon += TICK_MS;
 
-    if (tWeapon >= WEAPON_CYCLE_MS) {
-      tWeapon = 0;
-      weaponColor = (ColorId)((weaponColor + 1) % 3);
+    // Manual weapon color control
+    if (touch_left_just_pressed()) {
+      weaponColor = (ColorId)((weaponColor + 2) % 3);  // Cycle backward
+    } else if (touch_right_just_pressed()) {
+      weaponColor = (ColorId)((weaponColor + 1) % 3);  // Cycle forward
     }
 
     if (tSpawn >= SPAWN_EVERY_MS) {
@@ -214,8 +215,8 @@ void game_loop(uint32_t dt) {
       spawnEnemy();
     }
 
-    if (tFire >= FIRE_EVERY_MS) {
-      tFire = 0;
+    // Manual fire only
+    if (touch_action_just_pressed()) {
       fireBullet();
     }
 
@@ -235,4 +236,5 @@ void game_loop(uint32_t dt) {
 
   FastLED.show();
 }
+
 

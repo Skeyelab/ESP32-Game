@@ -4,9 +4,10 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "../input/touch_input.h"
 
 extern CRGB leds[];
-extern const int NUM_LEDS;
+#define NUM_LEDS 8  // Must match main.cpp
 
 static constexpr uint32_t TICK_MS = 100;
 static constexpr uint32_t ZONE_SPAWN_MS = 1200;
@@ -98,14 +99,15 @@ static void updateZones() {
 }
 
 static void updatePlayer() {
-  // TODO: Move based on input
-  // Auto-advance for demo
-  if (playerPos < NUM_LEDS - 1) {
+  // Move based on input
+  if (touch_action_just_pressed() && playerPos < NUM_LEDS - 1) {
     playerPos++;
   }
 
-  // TODO: Change color on button press
-  // Auto-cycle for demo
+  // Change color on button press
+  if (touch_alt_just_pressed()) {
+    playerColor = (ColorId)((playerColor + 1) % 3);
+  }
 }
 
 static void checkCollisions() {
@@ -159,7 +161,7 @@ void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("Color Runner X (8 LEDs) on GPIO 16");
-  Serial.println("Note: Input controls not yet implemented");
+  Serial.println("Action touch: move forward, Alt touch: change color");
 }
 
 void game_loop(uint32_t dt) {
@@ -185,12 +187,6 @@ void game_loop(uint32_t dt) {
       updateZones();
     }
 
-    if (tColorChange >= COLOR_CHANGE_MS) {
-      tColorChange = 0;
-      // Auto-cycle color for demo
-      playerColor = (ColorId)((playerColor + 1) % 3);
-    }
-
     updatePlayer();
     checkCollisions();
     render();
@@ -198,4 +194,5 @@ void game_loop(uint32_t dt) {
 
   FastLED.show();
 }
+
 

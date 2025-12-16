@@ -4,9 +4,10 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "../input/touch_input.h"
 
 extern CRGB leds[];
-extern const int NUM_LEDS;
+#define NUM_LEDS 8  // Must match main.cpp
 
 static constexpr uint32_t TICK_MS = 100;
 static constexpr uint32_t PAINT_MOVE_MS = 150;
@@ -59,9 +60,12 @@ static void updatePaint() {
 }
 
 static void updatePlayer() {
-  // TODO: Move based on input
-  // Auto-move for demo
-  playerPos = (playerPos + 1) % NUM_LEDS;
+  // Move based on input
+  if (touch_left_just_pressed() && playerPos > 0) {
+    playerPos--;
+  } else if (touch_right_just_pressed() && playerPos < NUM_LEDS - 1) {
+    playerPos++;
+  }
 }
 
 static void updateOpponent() {
@@ -160,7 +164,7 @@ void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("1D Splatoon (8 LEDs) on GPIO 16");
-  Serial.println("Note: Input controls not yet implemented");
+  Serial.println("Left touch: move left, Right touch: move right");
 }
 
 void game_loop(uint32_t dt) {
@@ -183,4 +187,5 @@ void game_loop(uint32_t dt) {
 
   FastLED.show();
 }
+
 

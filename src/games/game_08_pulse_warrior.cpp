@@ -4,9 +4,10 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "../input/touch_input.h"
 
 extern CRGB leds[];
-extern const int NUM_LEDS;
+#define NUM_LEDS 8  // Must match main.cpp
 
 static constexpr uint32_t TICK_MS = 50;
 static constexpr uint32_t PULSE_INTERVAL_MS = 800;
@@ -64,9 +65,8 @@ static void updatePulse() {
 static void checkHit() {
   if (!pulseActive) return;
 
-  // TODO: Check button press
-  // For now, auto-hit when pulse reaches target
-  if (pulsePos == targetPos) {
+  // Check button press
+  if (touch_action_just_pressed() && pulsePos == targetPos) {
     // Perfect hit!
     score += 10 + combo;
     combo++;
@@ -109,7 +109,7 @@ void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("Pulse Warrior (8 LEDs) on GPIO 16");
-  Serial.println("Note: Input controls not yet implemented");
+  Serial.println("Action touch: hit when pulse reaches target");
 }
 
 void game_loop(uint32_t dt) {
@@ -133,4 +133,5 @@ void game_loop(uint32_t dt) {
 
   FastLED.show();
 }
+
 

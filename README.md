@@ -17,6 +17,7 @@ This project provides a hardware-focused framework for building games on a one-d
 - **LED Strip**: WS2812B (NeoPixel-style, GRB color order)
 - **LED Data Pin**: GPIO 16 (locked unless explicitly changed)
 - **LED Count**: Configurable via `NUM_LEDS` define
+- **Input**: ESP32 capacitive touch pins (no additional hardware needed!)
 - **Power**: Ensure adequate power supply for your LED strip (WS2812B LEDs can draw significant current at full brightness)
 
 ### Wiring
@@ -24,6 +25,13 @@ This project provides a hardware-focused framework for building games on a one-d
 - Connect the LED strip data line to GPIO 16
 - Connect LED strip power (5V) and ground to appropriate power supply
 - Ensure common ground between ESP32 and LED strip
+- **Touch Input**: No wiring needed! Touch the following GPIO pins directly:
+  - **Left**: GPIO 4 (Touch0)
+  - **Right**: GPIO 15 (Touch3)
+  - **Action**: GPIO 13 (Touch4)
+  - **Alt**: GPIO 12 (Touch5)
+
+You can touch these pins directly with your finger, or connect wires/foil pads to them for a more robust setup.
 
 ## Quick Start
 
@@ -130,10 +138,14 @@ struct Game {
 };
 ```
 
+### Implemented Features
+
+- ✅ Touch input abstraction (ESP32 capacitive touch pins)
+- ✅ Multiple selectable games (10 games)
+- ✅ Unit testing framework
+
 ### Planned Features
 
-- Button / encoder input abstraction
-- Multiple selectable games
 - Simple menu rendered on LEDs
 - Sound output (PWM or I2S)
 - ESP32-S3 compatibility
@@ -180,6 +192,9 @@ Tests are run on the native platform (no hardware required) and validate game lo
 ESP32-Game/
 ├── src/
 │   ├── main.cpp          # Main entry point with game selection
+│   ├── input/            # Input abstraction layer
+│   │   ├── touch_input.h
+│   │   └── touch_input.cpp
 │   └── games/            # Individual game implementations
 │       ├── game_01_pacman.cpp
 │       ├── game_02_lava_run.cpp

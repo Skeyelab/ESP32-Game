@@ -4,9 +4,10 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "../input/touch_input.h"
 
 extern CRGB leds[];
-extern const int NUM_LEDS;
+#define NUM_LEDS 8  // Must match main.cpp
 
 static constexpr uint32_t TICK_MS = 50;
 static constexpr uint32_t PELLET_SPAWN_MS = 2000;
@@ -89,7 +90,7 @@ static void updatePacman() {
 
 static void updateGhost() {
   if (!ghost.active) return;
-  
+
   if (powerMode) {
     // In power mode, ghost runs away
     if (ghost.pos > pacmanPos) ghost.dir = 1;
@@ -101,7 +102,7 @@ static void updateGhost() {
     else if (ghost.pos < pacmanPos) ghost.dir = 1;
     else ghost.dir = (esp_random() & 1) ? 1 : -1;
   }
-  
+
   ghost.pos += ghost.dir;
   if (ghost.pos < 0) ghost.pos = NUM_LEDS - 1;
   if (ghost.pos >= NUM_LEDS) ghost.pos = 0;
@@ -119,7 +120,7 @@ static void checkCollisions() {
       score++;
     }
   }
-  
+
   // Check ghost collision
   if (ghost.active && ghost.pos == pacmanPos) {
     if (powerMode) {
@@ -136,7 +137,7 @@ static void checkCollisions() {
 
 static void render() {
   fadeToBlackBy(leds, NUM_LEDS, 100);
-  
+
   // Render pellets
   for (int i = 0; i < 4; i++) {
     if (pellets[i].active) {
@@ -147,7 +148,7 @@ static void render() {
       }
     }
   }
-  
+
   // Render ghost
   if (ghost.active) {
     if (powerMode) {
@@ -157,10 +158,10 @@ static void render() {
       leds[ghost.pos] = CRGB::Red;
     }
   }
-  
+
   // Render pacman
   leds[pacmanPos] = CRGB::Yellow;
-  
+
   // Score indicator on last LED
   uint8_t brightness = (uint8_t)min<uint32_t>(score * 5, 255);
   leds[NUM_LEDS - 1] += CRGB(0, brightness, 0);
@@ -170,20 +171,20 @@ void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("1D Pacman (8 LEDs) on GPIO 16");
-  Serial.println("Note: Input controls not yet implemented");
+  Serial.println("Left touch: move left, Right touch: move right");
 }
 
 void game_loop(uint32_t dt) {
   static uint32_t accum = 0;
   accum += dt;
-  
+
   while (accum >= TICK_MS) {
     accum -= TICK_MS;
-    
+
     tPelletSpawn += TICK_MS;
     tGhostSpawn += TICK_MS;
     tGhostMove += TICK_MS;
-    
+
     if (powerMode) {
       if (powerPelletTimer > TICK_MS) {
         powerPelletTimer -= TICK_MS;
@@ -192,33 +193,35 @@ void game_loop(uint32_t dt) {
         powerPelletTimer = 0;
       }
     }
-    
+
     if (tPelletSpawn >= PELLET_SPAWN_MS) {
       tPelletSpawn = 0;
       spawnPellet();
     }
-    
+
     if (tGhostSpawn >= GHOST_SPAWN_MS) {
       tGhostSpawn = 0;
       spawnGhost();
     }
-    
+
     if (tGhostMove >= GHOST_MOVE_MS) {
       tGhostMove = 0;
       updateGhost();
     }
-    
-    // TODO: Update pacman based on input
-    // For now, auto-move for demo
-    if (pacmanDir == 0) {
-      pacmanDir = (esp_random() & 1) ? 1 : -1;
+
+    // Update pacman based on input
+    if (touch_left_just_pressed()) {
+      pacmanDir = -1;
+    } else if (touch_right_just_pressed()) {
+      pacmanDir = 1;
     }
     updatePacman();
-    
+
     checkCollisions();
     render();
   }
-  
+
   FastLED.show();
 }
+
 

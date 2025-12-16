@@ -4,9 +4,10 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "../input/touch_input.h"
 
 extern CRGB leds[];
-extern const int NUM_LEDS;
+#define NUM_LEDS 8  // Must match main.cpp
 
 static constexpr uint32_t TICK_MS = 50;
 static constexpr uint32_t BALL_MOVE_MS = 100;
@@ -100,7 +101,7 @@ void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("1D Pong (8 LEDs) on GPIO 16");
-  Serial.println("Note: Input controls not yet implemented");
+  Serial.println("Left touch: move paddle left, Right touch: move paddle right");
 }
 
 void game_loop(uint32_t dt) {
@@ -123,11 +124,17 @@ void game_loop(uint32_t dt) {
       updateAI();
     }
 
-    // TODO: Update player paddle based on input
+    // Update player paddle based on input
+    if (touch_left_just_pressed() && playerPaddle > 0) {
+      playerPaddle--;
+    } else if (touch_right_just_pressed() && playerPaddle < NUM_LEDS - 1) {
+      playerPaddle++;
+    }
 
     render();
   }
 
   FastLED.show();
 }
+
 

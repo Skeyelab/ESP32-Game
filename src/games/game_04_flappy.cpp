@@ -4,9 +4,10 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "../input/touch_input.h"
 
 extern CRGB leds[];
-extern const int NUM_LEDS;
+#define NUM_LEDS 8  // Must match main.cpp
 
 static constexpr uint32_t TICK_MS = 50;
 static constexpr uint32_t OBSTACLE_SPAWN_MS = 1500;
@@ -66,9 +67,13 @@ static void spawnObstacle() {
 static void updateBird() {
   // Apply gravity
   birdVel += 1;  // Gravity pulls down
-  birdPos += birdVel;
 
-  // TODO: Flap on button press (birdVel -= 3)
+  // Flap on button press
+  if (touch_action_just_pressed()) {
+    birdVel -= 3;
+  }
+
+  birdPos += birdVel;
 
   // Boundary check
   if (birdPos < 0) {
@@ -149,7 +154,7 @@ void game_setup() {
   randomSeed(esp_random());
   resetGame();
   Serial.println("FlappyBird (8 LEDs) on GPIO 16");
-  Serial.println("Note: Input controls not yet implemented");
+  Serial.println("Action touch: flap/jump");
 }
 
 void game_loop(uint32_t dt) {
@@ -186,4 +191,5 @@ void game_loop(uint32_t dt) {
 
   FastLED.show();
 }
+
 

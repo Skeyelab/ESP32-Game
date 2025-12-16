@@ -18,7 +18,7 @@ Hardware Assumptions
 	•	LED Strip: WS2812B (GRB)
 	•	LED Data Pin: GPIO 16 (locked unless explicitly changed)
 	•	LED Count: Configurable via NUM_LEDS
-	•	Inputs: None initially (buttons / encoders may be added later)
+	•	Inputs: ESP32 capacitive touch pins (GPIO 4, 12, 13, 15)
 
 All code changes must respect these defaults unless the user explicitly requests otherwise.
 
@@ -42,7 +42,8 @@ Code Structure & Conventions
 
 Files
 	•	src/main.cpp is the authoritative entry point
-	•	New files may be added later (e.g. games/, input/) but should remain optional
+	•	src/input/ contains input abstraction (touch_input.h/cpp)
+	•	src/games/ contains individual game implementations
 
 Style Guidelines
 	•	Use plain C++, no STL containers unless clearly justified
@@ -100,11 +101,14 @@ What Agents SHOULD NOT Do
 Extension Roadmap (Informational)
 
 These are expected future steps but not yet implemented:
-	•	Button / encoder input abstraction
-	•	Multiple selectable games
 	•	Simple menu rendered on LEDs
 	•	Sound output (PWM or I2S)
 	•	ESP32-S3 compatibility
+
+Implemented:
+	•	Touch input abstraction (ESP32 capacitive touch pins)
+	•	Multiple selectable games (10 games)
+	•	Unit testing framework
 
 Agents may reference this roadmap but should not implement it without instruction.
 
